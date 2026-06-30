@@ -1,0 +1,75 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# secrets
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+config.local.*
+
+# logs / outputs
+logs/
+output/
+outputs/
+temp/
+tmp/
+*.log
+
+# data
+data/
+uploads/
+storage/
+*.db
+*.sqlite
+*.sqlite3
+
+# models / large files
+models/
+checkpoints/
+weights/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.zip
+*.rar
+*.7z
+
+# database / middleware local data
+mysql_data/
+mongo_data/
+milvus_data/
+neo4j_data/
+minio_data/
+
+# frontend
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# embedding models
+
+docker/embedding/
+
+*.bin
+
+*.safetensors
+
+*.pt
+
+*.pth
