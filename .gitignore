@@ -73,3 +73,11 @@ docker/embedding/
 *.pt
 
 *.pth
+
+# AI local config
+
+.claude/
+
+.env
+
+.env.*

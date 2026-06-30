@@ -1,68 +1,75 @@
 services:
 
+  # MySQL 数据库 — 存储业务结构化数据（meta.sql / dw.sql 会在首次启动时自动执行）
   mysql:
     image: mysql:8.0
     container_name: mysql
-    restart: unless-stopped
+    restart: unless-stopped                          # 容器意外退出后自动重启
     environment:
-      MYSQL_ROOT_PASSWORD: Atguigu.123
-      MYSQL_USER: atguigu
-      MYSQL_PASSWORD: Atguigu.123
+      MYSQL_ROOT_PASSWORD: whf200311                 # root 密码
+      MYSQL_USER: whf
+      MYSQL_PASSWORD: whf200311
     ports:
-      - "3306:3306"
+      - "3306:3306"                                  # 宿主机 3306 → 容器 3306
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql                    # 持久化数据库文件，防止容器重建后数据丢失
+      - ./mysql:/docker-entrypoint-initdb.d          # 挂载初始化 SQL，首次启动自动建库建表
     command:
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_general_ci
+      - --character-set-server=utf8mb4                # 字符集设为 utf8mb4，完整支持中文和 emoji
+      - --collation-server=utf8mb4_general_ci
 
+  # Elasticsearch — 全文搜索引擎，用于文档索引和检索（内置 ik 中文分词插件）
   elasticsearch:
-    build: ./elasticsearch
+    build: ./elasticsearch                            # 使用自定义 Dockerfile 构建（含 ik 分词插件安装）
     container_name: elasticsearch
     restart: unless-stopped
     environment:
-      discovery.type: single-node
-      xpack.security.enabled: "false"
+      discovery.type: single-node                     # 单节点模式，不加入集群
+      xpack.security.enabled: "false"                 # 关闭安全认证，方便开发调试
     ports:
-      - "9200:9200"
+      - "9200:9200"                                   # REST API 端口
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch/data         # 持久化索引数据
+
+  # Kibana — Elasticsearch 可视化管理界面，用于查看索引、执行查询
   kibana:
-    image: kibana:8.19.10
+    image: docker.elastic.co/kibana/kibana:8.19.10
     container_name: kibana
     restart: unless-stopped
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200  # 指向同网络下的 ES 容器
     ports:
-      - "5601:5601"
+      - "5601:5601"                                   # Web UI 端口
     depends_on:
-      - elasticsearch
+      - elasticsearch                                 # 确保 ES 先启动
 
+  # Qdrant — 向量数据库，用于存储和检索文本嵌入向量（RAG 核心组件）
   qdrant:
     image: qdrant/qdrant:v1.16
     container_name: qdrant
     restart: unless-stopped
     ports:
-      - "6333:6333"   # HTTP
-      - "6334:6334"   # gRPC
+      - "6333:6333"                                   # HTTP API 端口
+      - "6334:6334"                                   # gRPC 端口（高性能场景使用）
     volumes:
-      - qdrant_data:/qdrant/storage
+      - qdrant_data:/qdrant/storage                   # 持久化向量数据
 
+  # Embedding — 文本向量化服务，将文本转为稠密向量供 Qdrant 存储和检索
   embedding:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8   # HuggingFace 官方 CPU 推理镜像
     container_name: embedding
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "8081:80"                                     # 宿主机 8081 → 容器 80（推理服务端口）
     environment:
-      MODEL_ID: /models/bge-large-zh-v1.5
-      MAX_CONCURRENT_REQUESTS: "16"
-      MAX_BATCH_TOKENS: "16384"
+      MODEL_ID: /models/bge-large-zh-v1.5             # 模型路径，使用 bge-large 中文嵌入模型
+      MAX_CONCURRENT_REQUESTS: "16"                    # 最大并发请求数
+      MAX_BATCH_TOKENS: "16384"                        # 单批次最大 token 数
     volumes:
-      - ./embedding/bge-large-zh-v1.5:/models/bge-large-zh-v1.5
+      - ./embedding/bge-large-zh-v1.5:/models/bge-large-zh-v1.5   # 挂载本地模型文件
 
+# 命名卷声明 — Docker 自动管理存储路径，容器重建后数据不丢失
 volumes:
-  mysql_data:
-  es_data:
-  qdrant_data:
+  mysql_data:                                         # MySQL 数据文件
+  es_data:                                            # Elasticsearch 索引数据
+  qdrant_data:                                        # Qdrant 向量数据
