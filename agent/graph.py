@@ -1,7 +1,9 @@
 import asyncio
 
 from langgraph.constants import START, END
+from langgraph.graph._branch import BranchSpec
 from langgraph.graph import StateGraph
+from langgraph.pregel._write import ChannelWrite
 
 from agent.context import DataAgentContext
 from agent.nodes.add_extra_context import add_extra_context
@@ -26,6 +28,34 @@ from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
 from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
+
+
+_original_channel_awrite = ChannelWrite._awrite
+_original_channel_write = ChannelWrite._write
+_original_branch_aroute = BranchSpec._aroute
+_original_branch_route = BranchSpec._route
+
+
+async def _channel_awrite_compat(self, input, conf):
+    return await _original_channel_awrite(self, input, conf)
+
+
+def _channel_write_compat(self, input, conf):
+    return _original_channel_write(self, input, conf)
+
+
+async def _branch_aroute_compat(self, input, conf, *, reader, writer):
+    return await _original_branch_aroute(self, input, conf, reader=reader, writer=writer)
+
+
+def _branch_route_compat(self, input, conf, *, reader, writer):
+    return _original_branch_route(self, input, conf, reader=reader, writer=writer)
+
+
+ChannelWrite._awrite = _channel_awrite_compat
+ChannelWrite._write = _channel_write_compat
+BranchSpec._aroute = _branch_aroute_compat
+BranchSpec._route = _branch_route_compat
 
 graph_builder = StateGraph(state_schema=DataAgentState, context_schema=DataAgentContext)
 
@@ -66,4 +96,7 @@ graph_builder.add_edge("correct_sql", "execute_sql")
 graph_builder.add_edge("execute_sql", END)
 
 graph = graph_builder.compile()
-print(graph.get_graph().draw_ascii())
+
+
+if __name__ == '__main__':
+    print(graph.get_graph().draw_ascii())

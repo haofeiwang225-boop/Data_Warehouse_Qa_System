@@ -140,4 +140,5 @@ if __name__ == '__main__':
         await es_client_manager.close()
 
 # 启动异步事件循环，运行测试函数
-asyncio.run(test())
+if __name__ == '__main__':
+    asyncio.run(test())

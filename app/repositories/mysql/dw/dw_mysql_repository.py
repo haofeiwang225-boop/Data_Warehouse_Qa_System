@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +22,13 @@ class DWMySQLRepository:
         sql = f"select distinct {column_name} from {table_name} limit {limit}"
         result = await self.session.execute(text(sql))
         # scalars() 将结果转为单列模式，fetchall() 取出所有值，返回一维列表
-        return result.scalars().fetchall()
+        return [self._json_safe_value(value) for value in result.scalars().fetchall()]
+
+    @staticmethod
+    def _json_safe_value(value):
+        if isinstance(value, Decimal):
+            return float(value)
+        return value
 
     async def get_db_info(self):
         """获取数据库版本和方言类型（如 mysql、postgresql），用于 SQL 方言适配。"""

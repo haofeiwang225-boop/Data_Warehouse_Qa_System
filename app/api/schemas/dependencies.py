@@ -22,7 +22,7 @@ async def get_dw_session():
         yield session
 
 async def get_embedding_client():
-    return embedding_client_manager.client
+    return embedding_client_manager
 
 async def get_column_qdrant_repository():
     return ColumnQdrantRepository(qdrant_client_manager.client)

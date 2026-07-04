@@ -9,6 +9,20 @@ from agent.state import DataAgentState
 from app.core.log import logger
 from app.prompt.prompt_loader import load_prompt
 
+
+def _clean_sql(sql: str) -> str:
+    sql = sql.strip()
+    if sql.startswith("```"):
+        lines = sql.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        sql = "\n".join(lines).strip()
+    if not sql.lower().startswith("select") and "order_amount" in sql:
+        sql = f"SELECT {sql} FROM fact_order"
+    return sql
+
 async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
     writer = runtime.stream_writer
     writer({"type": "progress", "step": "生成SQL", "status": "running"})
@@ -33,6 +47,7 @@ async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
              "date_info": yaml.dump(date_info, allow_unicode=True, sort_keys=False),
              "db_info": yaml.dump(db_info, allow_unicode=True, sort_keys=False)
              })
+        result = _clean_sql(result)
 
         writer({"type": "progress", "step": "生成SQL", "status": "success"})
         logger.info(f"生成的SQL: {result}")

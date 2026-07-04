@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 import httpx
@@ -24,13 +25,22 @@ class EmbeddingClientManager:
         """对单条文本进行向量化，返回 embedding 向量"""
         resp = self.client.post("/embed", json={"inputs": text})
         resp.raise_for_status()
-        return resp.json()[0]
+        data = resp.json()
+        vectors = data["value"] if isinstance(data, dict) and "value" in data else data
+        return vectors[0]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """对多条文本进行向量化，返回 embedding 向量列表"""
         resp = self.client.post("/embed", json={"inputs": texts})
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        return data["value"] if isinstance(data, dict) and "value" in data else data
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return await asyncio.to_thread(self.embed_query, text)
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return await asyncio.to_thread(self.embed_documents, texts)
 
 
 embedding_client_manager = EmbeddingClientManager(app_config.embedding)

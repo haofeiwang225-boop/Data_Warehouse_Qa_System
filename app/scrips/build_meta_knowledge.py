@@ -89,7 +89,7 @@ async def build(config_path: Path):
             qdrant_client_manager.client
         )  # 将列描述的Embedding向量写入Qdrant，支持语义相似度检索
 
-        embedding_client = embedding_client_manager.client
+        embedding_client = embedding_client_manager
         # Embedding客户端：调用模型将文本（如列名、描述）转换为向量表示
 
         value_es_repository = ValueESRepository(

@@ -340,6 +340,9 @@ class MetaKnowledgeService:
         meta_config: MetaConfig = OmegaConf.to_object(OmegaConf.merge(schema, context))
         logger.info("加载配置文件")
 
+        async with self.meta_mysql_repository.session.begin():
+            await self.meta_mysql_repository.clear_all()
+
         # ==============================================================
         # 第2步：处理表和列
         # ==============================================================

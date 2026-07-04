@@ -1,4 +1,4 @@
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
@@ -23,7 +23,7 @@ class MetricQdrantRepository:
         zipped = list(zip(ids, embeddings, payloads))
         for i in range(0, len(zipped), batch_size):
             batch = zipped[i:i + batch_size]
-            batch_points = [PointStruct(id=id, vector=embedding, payload=asdict(payload)) for id, embedding, payload in
+            batch_points = [PointStruct(id=id, vector=embedding, payload=asdict(payload) if is_dataclass(payload) else payload) for id, embedding, payload in
                             batch]
             await self.client.upsert(collection_name=self.collection_name, points=batch_points)
 
