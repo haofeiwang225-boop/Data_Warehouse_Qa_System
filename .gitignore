@@ -21,6 +21,7 @@ config.local.*
 logs/
 output/
 outputs/
+artifacts/evaluation/
 temp/
 tmp/
 *.log
